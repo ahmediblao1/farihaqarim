@@ -9,7 +9,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const heroRef = useRef(null);
-  const floatingElementsRef = useRef([]);
+  const floatingElementsRef = useRef<(HTMLDivElement | null)[]>([]);
 
   // Scramble text effect
   useEffect(() => {
@@ -60,6 +60,7 @@ export default function Home() {
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('mousemove', handleMouseMove);
 
+    // Fixed intersection observer with better timing
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -68,12 +69,24 @@ export default function Home() {
           }
         });
       },
-      { threshold: 0.1 }
+      { 
+        threshold: 0.1,
+        rootMargin: '50px 0px -50px 0px' // Start animation earlier
+      }
     );
 
-    document.querySelectorAll('[data-animate]').forEach((el) => {
-      observer.observe(el);
-    });
+    // Wait for DOM to be ready before observing
+    const observeElements = () => {
+      const elements = document.querySelectorAll('[data-animate]');
+      elements.forEach((el) => {
+        if (el.id) {
+          observer.observe(el);
+        }
+      });
+    };
+
+    // Delay the observer setup to ensure elements are rendered
+    setTimeout(observeElements, 100);
 
     // Animate floating elements
     const animateFloating = () => {
@@ -95,7 +108,7 @@ export default function Home() {
       window.removeEventListener('mousemove', handleMouseMove);
       observer.disconnect();
     };
-  }, []);
+  }, [isLoading]); // Add isLoading dependency
 
   const services = [
     { name: "BRANDING", desc: "Visual identity design", icon: "🎨" },
@@ -119,7 +132,7 @@ export default function Home() {
       {[...Array(8)].map((_, i) => (
         <div
           key={i}
-          ref={el => floatingElementsRef.current[i] = el}
+          ref={el => { floatingElementsRef.current[i] = el; }}
           className="absolute opacity-10"
           style={{
             left: `${10 + i * 15}%`,
@@ -242,7 +255,7 @@ export default function Home() {
           </div>
         </div>
 
-        <style jsx>{`
+        <style>{`
           @keyframes scramble-glow {
             0%, 100% { 
               text-shadow: 0 0 20px rgba(255,255,255,0.5), 0 0 40px rgba(255,255,255,0.3);
@@ -262,7 +275,7 @@ export default function Home() {
 
   return (
     <div className="bg-white relative overflow-hidden">
-      <style jsx>{`
+      <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) rotate(0deg); }
           50% { transform: translateY(-20px) rotate(5deg); }
@@ -364,6 +377,19 @@ export default function Home() {
           font-family: 'Courier New', monospace;
           letter-spacing: 0.1em;
         }
+        
+        /* Fallback styles for sections that haven't loaded yet */
+        .section-visible {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        .section-hidden {
+          opacity: 0;
+          transform: translateY(50px);
+        }
+        .section-animate {
+          transition: all 1s ease-out;
+        }
       `}</style>
 
       <FloatingElements />
@@ -419,11 +445,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Enhanced Services Section */}
+      {/* Enhanced Services Section - Fixed visibility */}
       <section 
         id="services" 
         data-animate
-        className={`py-20 transition-all duration-1000 ${isVisible['services'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+        className={`py-20 section-animate ${isVisible['services'] ? 'section-visible' : 'section-hidden'}`}
       >
         <div className="container mx-auto px-6">
           <h2 className="text-5xl md:text-7xl font-black text-center mb-16 animate-text-glow">
@@ -452,11 +478,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Enhanced Stats Section with Counter Animation */}
+      {/* Enhanced Stats Section with Counter Animation - Fixed visibility */}
       <section 
         id="stats" 
         data-animate
-        className={`py-20 bg-black text-white transition-all duration-1000 relative overflow-hidden ${isVisible['stats'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+        className={`py-20 bg-black text-white section-animate relative overflow-hidden ${isVisible['stats'] ? 'section-visible' : 'section-hidden'}`}
       >
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 left-10 w-20 h-20 border-2 border-white animate-spin"></div>
@@ -490,11 +516,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Enhanced About Section */}
+      {/* Enhanced About Section - Fixed visibility */}
       <section 
         id="about" 
         data-animate
-        className={`py-20 transition-all duration-1000 ${isVisible['about'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+        className={`py-20 section-animate ${isVisible['about'] ? 'section-visible' : 'section-hidden'}`}
       >
         <div className="container mx-auto px-6">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -549,11 +575,11 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Enhanced CTA Section */}
+      {/* Enhanced CTA Section - Fixed visibility */}
       <section 
         id="cta" 
         data-animate
-        className={`py-20 bg-black text-white transition-all duration-1000 relative overflow-hidden ${isVisible['cta'] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
+        className={`py-20 bg-black text-white section-animate relative overflow-hidden ${isVisible['cta'] ? 'section-visible' : 'section-hidden'}`}
       >
         <div className="absolute inset-0">
           {[...Array(5)].map((_, i) => (
